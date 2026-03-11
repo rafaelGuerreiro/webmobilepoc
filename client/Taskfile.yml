@@ -1,0 +1,41 @@
+version: '3'
+
+tasks:
+  install:
+    desc: Install client dependencies
+    cmds:
+      - npm install
+
+  dev:
+    desc: Run the client dev server
+    deps: [install]
+    cmds:
+      - npm run dev -- --host
+
+  lint:
+    desc: Type-check client sources
+    deps: [install]
+    cmds:
+      - npm run lint
+
+  build:
+    desc: Build the client
+    deps: [install]
+    cmds:
+      - npm run build
+
+  cap-sync:
+    desc: Sync Capacitor native projects
+    deps: [build]
+    cmds:
+      - npm run cap:sync
+
+  cap-open-android:
+    desc: Open the Android Capacitor project
+    cmds:
+      - npm run cap:open:android
+
+  cap-open-ios:
+    desc: Open the iOS Capacitor project
+    cmds:
+      - npm run cap:open:ios

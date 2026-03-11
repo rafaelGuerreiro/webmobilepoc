@@ -3,12 +3,11 @@ use crate::{
     error::{ErrorMapper, ServiceError, ServiceResult},
     extend::validate::ReducerContextRequirements,
     repository::{
-        character::services::CharacterReducerContext,
         chat::{ChatBubbleV1, chat_bubble_v1},
         world::services::WorldReducerContext,
     },
 };
-use spacetimedb::{ReducerContext, Table};
+use spacetimedb::{Identity, ReducerContext, Table};
 use std::ops::Deref;
 use thiserror::Error;
 
@@ -35,21 +34,18 @@ impl Deref for ChatServices<'_> {
 }
 
 impl ChatServices<'_> {
-    pub fn send_message(&self, character_id: u64, content: String) -> ServiceResult<()> {
+    pub fn send_message(&self, user_id: Identity, content: String) -> ServiceResult<()> {
         let content = content.trim();
         if content.is_empty() {
             return Err(ChatError::message_empty());
         }
         self.validate_str(content, "message", CHAT_MESSAGE_MIN_LEN as u64, CHAT_MESSAGE_MAX_LEN as u64)?;
 
-        let position = self.world_services().get_online_position(character_id)?;
-        let character = self.character_services().get_online(character_id)?;
-        let stats = self.character_services().get_stats(character_id)?;
+        let position = self.world_services().get_online_position(user_id)?;
 
         self.db.chat_bubble_v1().insert(ChatBubbleV1 {
             bubble_id: 0,
-            character_name: character.display_name,
-            character_level: stats.level,
+            user_id,
             content: content.to_string(),
             x: position.x,
             y: position.y,

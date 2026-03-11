@@ -1,6 +1,9 @@
 use crate::{
     error::{ErrorMapper, ServiceError, ServiceResult},
-    repository::character::{CharacterV1, services::CharacterReducerContext},
+    repository::{
+        user::{UserV1, services::UserReducerContext},
+        world::services::WorldReducerContext,
+    },
 };
 use spacetimedb::ReducerContext;
 use thiserror::Error;
@@ -28,7 +31,7 @@ pub trait ReducerContextRequirements {
 
     fn require_internal_access(&self) -> ServiceResult<()>;
 
-    fn require_online(&self) -> ServiceResult<CharacterV1>;
+    fn require_online(&self) -> ServiceResult<UserV1>;
 }
 
 impl ReducerContextRequirements for ReducerContext {
@@ -39,8 +42,10 @@ impl ReducerContextRequirements for ReducerContext {
         Ok(())
     }
 
-    fn require_online(&self) -> ServiceResult<CharacterV1> {
-        self.character_services().get_current(self.sender())
+    fn require_online(&self) -> ServiceResult<UserV1> {
+        let user = self.user_services().get(self.sender())?;
+        let _ = self.world_services().get_online_position(self.sender())?;
+        Ok(user)
     }
 }
 

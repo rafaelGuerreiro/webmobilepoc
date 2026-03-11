@@ -1,9 +1,9 @@
 use crate::{
     constants::{MAP_VIEW_RADIUS, SECTOR_SIZE},
     repository::{
-        character::online_character_v1__view,
+        user::user_v1__view,
         world::{
-            OccupiedTileV1, occupied_tile_v1__view, online_character_position_v1__view,
+            OccupiedTileV1, occupied_tile_v1__view, online_user_position_v1__view,
             types::{Rect, Vec2},
         },
     },
@@ -11,12 +11,8 @@ use crate::{
 use spacetimedb::ViewContext;
 
 pub fn find_range(ctx: &ViewContext) -> Option<Rect> {
-    let current = ctx.db.online_character_v1().user_id().find(ctx.sender())?;
-    let position = ctx
-        .db
-        .online_character_position_v1()
-        .character_id()
-        .find(current.character_id)?;
+    let _user = ctx.db.user_v1().user_id().find(ctx.sender())?;
+    let position = ctx.db.online_user_position_v1().user_id().find(ctx.sender())?;
 
     Some(Rect::new(
         position.x.saturating_sub(MAP_VIEW_RADIUS),

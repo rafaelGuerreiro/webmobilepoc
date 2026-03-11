@@ -11,6 +11,31 @@ includes:
 tasks:
   # ── Orchestration ──────────────────────────────────────────────────
 
+  install:
+    desc: Install project dependencies
+    cmds:
+      - task client:install
+
+  dev:
+    desc: Run the mobile web client
+    cmds:
+      - task client:dev
+
+  sync:
+    desc: Sync Capacitor native projects
+    cmds:
+      - task client:cap-sync
+
+  android:
+    desc: Open the Android project
+    cmds:
+      - task client:cap-open-android
+
+  ios:
+    desc: Open the iOS project
+    cmds:
+      - task client:cap-open-ios
+
   check:
     desc: Check all projects
     cmds:

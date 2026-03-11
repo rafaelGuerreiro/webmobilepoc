@@ -1,7 +1,6 @@
 use crate::{error::ServiceResult, repository::event::services::EventReducerContext};
 use spacetimedb::ReducerContext;
 
-pub mod character;
 pub mod chat;
 pub mod event;
 pub mod user;

@@ -10,49 +10,9 @@ import {
   type Infer as __Infer,
 } from "spacetimedb";
 
-export const CharacterPositionV1 = __t.object("CharacterPositionV1", {
-  characterId: __t.u64(),
-  x: __t.u16(),
-  y: __t.u16(),
-});
-export type CharacterPositionV1 = __Infer<typeof CharacterPositionV1>;
-
-export const CharacterStatsV1 = __t.object("CharacterStatsV1", {
-  characterId: __t.u64(),
-  userId: __t.identity(),
-  level: __t.u16(),
-  experience: __t.u64(),
-  health: __t.u32(),
-  mana: __t.u32(),
-  capacity: __t.u32(),
-  freeCapacity: __t.u32(),
-  speed: __t.u16(),
-  attackSpeed: __t.u16(),
-});
-export type CharacterStatsV1 = __Infer<typeof CharacterStatsV1>;
-
-export const CharacterV1 = __t.object("CharacterV1", {
-  characterId: __t.u64(),
-  userId: __t.identity(),
-  name: __t.string(),
-  displayName: __t.string(),
-  get race() {
-    return RaceV1;
-  },
-  get class() {
-    return ClassV1;
-  },
-  get gender() {
-    return GenderV1;
-  },
-  createdAt: __t.timestamp(),
-});
-export type CharacterV1 = __Infer<typeof CharacterV1>;
-
 export const ChatBubbleV1 = __t.object("ChatBubbleV1", {
   bubbleId: __t.u64(),
-  characterName: __t.string(),
-  characterLevel: __t.u16(),
+  userId: __t.identity(),
   content: __t.string(),
   x: __t.u16(),
   y: __t.u16(),
@@ -60,38 +20,16 @@ export const ChatBubbleV1 = __t.object("ChatBubbleV1", {
 });
 export type ChatBubbleV1 = __Infer<typeof ChatBubbleV1>;
 
-// The tagged union or sum type for the algebraic type `ClassV1`.
-export const ClassV1 = __t.enum("ClassV1", {
-  None: __t.unit(),
-  Warrior: __t.unit(),
-  Rogue: __t.unit(),
-  Wizard: __t.unit(),
-  Berserker: __t.unit(),
-  Knight: __t.unit(),
-  Hunter: __t.unit(),
-  Archer: __t.unit(),
-  Warlock: __t.unit(),
-  Druid: __t.unit(),
-});
-export type ClassV1 = __Infer<typeof ClassV1>;
-
 // The tagged union or sum type for the algebraic type `DeferredEventV1`.
 export const DeferredEventV1 = __t.enum("DeferredEventV1", {
   SignedOut: __t.identity(),
 });
 export type DeferredEventV1 = __Infer<typeof DeferredEventV1>;
 
-// The tagged union or sum type for the algebraic type `GenderV1`.
-export const GenderV1 = __t.enum("GenderV1", {
-  Male: __t.unit(),
-  Female: __t.unit(),
-});
-export type GenderV1 = __Infer<typeof GenderV1>;
-
 export const OccupiedTileV1 = __t.object("OccupiedTileV1", {
   tileId: __t.u64(),
   sectorKey: __t.u64(),
-  characterIds: __t.array(__t.u64()),
+  userId: __t.identity(),
 });
 export type OccupiedTileV1 = __Infer<typeof OccupiedTileV1>;
 
@@ -106,19 +44,12 @@ export const OneshotDeferredEventV1 = __t.object("OneshotDeferredEventV1", {
 });
 export type OneshotDeferredEventV1 = __Infer<typeof OneshotDeferredEventV1>;
 
-export const OnlineCharacterV1 = __t.object("OnlineCharacterV1", {
+export const UserPositionV1 = __t.object("UserPositionV1", {
   userId: __t.identity(),
-  characterId: __t.u64(),
-  signedInAt: __t.timestamp(),
+  x: __t.u16(),
+  y: __t.u16(),
 });
-export type OnlineCharacterV1 = __Infer<typeof OnlineCharacterV1>;
-
-// The tagged union or sum type for the algebraic type `RaceV1`.
-export const RaceV1 = __t.enum("RaceV1", {
-  Human: __t.unit(),
-  Elf: __t.unit(),
-});
-export type RaceV1 = __Infer<typeof RaceV1>;
+export type UserPositionV1 = __Infer<typeof UserPositionV1>;
 
 export const UserV1 = __t.object("UserV1", {
   userId: __t.identity(),

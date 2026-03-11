@@ -5,7 +5,7 @@ use spacetimedb::{ReducerContext, reducer};
 
 #[reducer]
 pub fn say_v1(ctx: &ReducerContext, content: String) -> ServiceResult<()> {
-    let character = ctx.require_online()?;
-    ctx.chat_services().send_message(character.character_id, content)?;
+    let user = ctx.require_online()?;
+    ctx.chat_services().send_message(user.user_id, content)?;
     Ok(())
 }

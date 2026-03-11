@@ -1,7 +1,6 @@
 use crate::{
     error::ServiceResult,
     repository::{
-        character::services::CharacterReducerContext,
         event::{
             OneshotDeferredEventV1, oneshot_deferred_event_v1,
             types::{DeferredEventV1, EventV1},
@@ -46,24 +45,13 @@ impl EventServices<'_> {
     fn handle_sync_event(&self, event: EventV1, _rethrow: bool) -> ServiceResult<()> {
         match event {
             EventV1::SystemInit => {},
-            EventV1::UserCreated { .. } => {},
             EventV1::UserSignedIn { user_id } => {
                 self.user_services().signed_in(user_id);
-                self.character_services().clear_online_character(user_id);
-                self.world_services().despawn_character(user_id);
+                self.world_services().spawn_user(user_id);
             },
             EventV1::UserSignedOut { user_id } => {
-                self.world_services().despawn_character(user_id);
-                self.character_services().clear_online_character(user_id);
+                self.world_services().despawn_user(user_id);
                 self.user_services().signed_out(user_id);
-            },
-            EventV1::CharacterCreated { .. } => {},
-            EventV1::CharacterSelected { user_id, .. } => {
-                self.world_services().spawn_character(user_id);
-            },
-            EventV1::CharacterUnselected { user_id } => {
-                self.world_services().despawn_character(user_id);
-                self.character_services().clear_online_character(user_id);
             },
         }
 
@@ -95,7 +83,6 @@ impl EventServices<'_> {
     }
 
     fn enqueue_deferred_event(&self, event: DeferredEventV1) {
-        // Schedule for 4 milliseconds later to allow sync handlers to complete, this is 250fps.
         let scheduled_at = self.timestamp + Duration::from_millis(4);
 
         let job = self.db.oneshot_deferred_event_v1().insert(OneshotDeferredEventV1 {

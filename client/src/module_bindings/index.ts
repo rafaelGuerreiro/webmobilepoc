@@ -34,23 +34,15 @@ import {
 } from "spacetimedb";
 
 // Import all reducer arg schemas
-import CreateCharacterV1Reducer from "./create_character_v_1_reducer";
 import SayV1Reducer from "./say_v_1_reducer";
-import SelectCharacterV1Reducer from "./select_character_v_1_reducer";
-import UnselectCharacterV1Reducer from "./unselect_character_v_1_reducer";
 
 // Import all procedure arg schemas
 
 // Import all table schema definitions
 import ChatBubbleV1Row from "./chat_bubble_v_1_table";
-import VwCharacterAllMineStatsV1Row from "./vw_character_all_mine_stats_v_1_table";
-import VwCharacterAllMineV1Row from "./vw_character_all_mine_v_1_table";
-import VwCharacterMeStatsV1Row from "./vw_character_me_stats_v_1_table";
-import VwCharacterMeV1Row from "./vw_character_me_v_1_table";
-import VwNearbyCharacterPositionsV1Row from "./vw_nearby_character_positions_v_1_table";
-import VwNearbyCharactersV1Row from "./vw_nearby_characters_v_1_table";
+import VwNearbyPositionsV1Row from "./vw_nearby_positions_v_1_table";
 import VwUserMeV1Row from "./vw_user_me_v_1_table";
-import VwWorldMyCharacterPositionV1Row from "./vw_world_my_character_position_v_1_table";
+import VwWorldMyPositionV1Row from "./vw_world_my_position_v_1_table";
 
 /** Type-only namespace exports for generated type groups. */
 
@@ -68,48 +60,13 @@ const tablesSchema = __schema({
     ],
     event: true,
   }, ChatBubbleV1Row),
-  vw_character_all_mine_stats_v1: __table({
-    name: 'vw_character_all_mine_stats_v1',
+  vw_nearby_positions_v1: __table({
+    name: 'vw_nearby_positions_v1',
     indexes: [
     ],
     constraints: [
     ],
-  }, VwCharacterAllMineStatsV1Row),
-  vw_character_all_mine_v1: __table({
-    name: 'vw_character_all_mine_v1',
-    indexes: [
-    ],
-    constraints: [
-    ],
-  }, VwCharacterAllMineV1Row),
-  vw_character_me_stats_v1: __table({
-    name: 'vw_character_me_stats_v1',
-    indexes: [
-    ],
-    constraints: [
-    ],
-  }, VwCharacterMeStatsV1Row),
-  vw_character_me_v1: __table({
-    name: 'vw_character_me_v1',
-    indexes: [
-    ],
-    constraints: [
-    ],
-  }, VwCharacterMeV1Row),
-  vw_nearby_character_positions_v1: __table({
-    name: 'vw_nearby_character_positions_v1',
-    indexes: [
-    ],
-    constraints: [
-    ],
-  }, VwNearbyCharacterPositionsV1Row),
-  vw_nearby_characters_v1: __table({
-    name: 'vw_nearby_characters_v1',
-    indexes: [
-    ],
-    constraints: [
-    ],
-  }, VwNearbyCharactersV1Row),
+  }, VwNearbyPositionsV1Row),
   vw_user_me_v1: __table({
     name: 'vw_user_me_v1',
     indexes: [
@@ -117,21 +74,18 @@ const tablesSchema = __schema({
     constraints: [
     ],
   }, VwUserMeV1Row),
-  vw_world_my_character_position_v1: __table({
-    name: 'vw_world_my_character_position_v1',
+  vw_world_my_position_v1: __table({
+    name: 'vw_world_my_position_v1',
     indexes: [
     ],
     constraints: [
     ],
-  }, VwWorldMyCharacterPositionV1Row),
+  }, VwWorldMyPositionV1Row),
 });
 
 /** The schema information for all reducers in this module. This is defined the same way as the reducers would have been defined in the server, except the body of the reducer is omitted in code generation. */
 const reducersSchema = __reducers(
-  __reducerSchema("create_character_v1", CreateCharacterV1Reducer),
   __reducerSchema("say_v1", SayV1Reducer),
-  __reducerSchema("select_character_v1", SelectCharacterV1Reducer),
-  __reducerSchema("unselect_character_v1", UnselectCharacterV1Reducer),
 );
 
 /** The schema information for all procedures in this module. This is defined the same way as the procedures would have been defined in the server. */

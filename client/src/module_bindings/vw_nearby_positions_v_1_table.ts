@@ -10,17 +10,8 @@ import {
   type Infer as __Infer,
 } from "spacetimedb";
 
-import {
-  RaceV1,
-  GenderV1,
-} from "./types";
-
-export default {
-  displayName: __t.string(),
-  get gender() {
-    return GenderV1;
-  },
-  get race() {
-    return RaceV1;
-  },
-};
+export default __t.row({
+  userId: __t.identity().name("user_id"),
+  x: __t.u16(),
+  y: __t.u16(),
+});
