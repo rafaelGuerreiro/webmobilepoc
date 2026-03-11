@@ -7,6 +7,9 @@ import { WorldScene, type RenderPlayer } from '../game/WorldScene';
 
 type ConnectionStatus = 'connecting' | 'connected' | 'disconnected' | 'error';
 
+/** How long a chat bubble stays visible on the map (ms). */
+const BUBBLE_TTL_MS = 8_000;
+
 interface AppState {
   status: ConnectionStatus;
   identity: string | null;
@@ -14,7 +17,6 @@ interface AppState {
   me: UserV1 | null;
   currentPosition: UserPositionV1 | null;
   nearbyPositions: UserPositionV1[];
-  chatBubbles: ChatBubbleV1[];
 }
 
 const DEFAULT_STATE: AppState = {
@@ -24,7 +26,6 @@ const DEFAULT_STATE: AppState = {
   me: null,
   currentPosition: null,
   nearbyPositions: [],
-  chatBubbles: [],
 };
 
 const HOST = import.meta.env.VITE_STDB_URI ?? 'https://maincloud.spacetimedb.com';
@@ -38,44 +39,36 @@ export class App {
   private readonly worldScene = new WorldScene();
   private readonly gameInstance: Phaser.Game;
 
-  private readonly statusValue: HTMLElement;
   private readonly statusDot: HTMLElement;
-  private readonly identityValue: HTMLElement;
-  private readonly presencePanel: HTMLElement;
-  private readonly playersPanel: HTMLElement;
-  private readonly chatLog: HTMLElement;
+  private readonly statusLabel: HTMLElement;
   private readonly chatForm: HTMLFormElement;
   private readonly chatInput: HTMLInputElement;
-  private readonly errorBanner: HTMLElement;
+  private readonly chatButton: HTMLButtonElement;
+  private readonly errorToast: HTMLElement;
+
+  /** Local accumulator for chat bubbles (event table rows are ephemeral). */
+  private readonly liveBubbles = new Map<string, { bubble: ChatBubbleV1; timer: ReturnType<typeof setTimeout> }>();
 
   constructor(root: HTMLElement) {
     this.root = root;
     this.root.innerHTML = this.template();
 
-    const stage = this.root.querySelector<HTMLElement>('[data-game-stage]');
-    this.statusValue = this.root.querySelector<HTMLElement>('[data-status-value]')!;
+    const gameContainer = this.root.querySelector<HTMLElement>('[data-game-container]')!;
     this.statusDot = this.root.querySelector<HTMLElement>('[data-status-dot]')!;
-    this.identityValue = this.root.querySelector<HTMLElement>('[data-identity-value]')!;
-    this.presencePanel = this.root.querySelector<HTMLElement>('[data-presence-panel]')!;
-    this.playersPanel = this.root.querySelector<HTMLElement>('[data-players-panel]')!;
-    this.chatLog = this.root.querySelector<HTMLElement>('[data-chat-log]')!;
+    this.statusLabel = this.root.querySelector<HTMLElement>('[data-status-label]')!;
     this.chatForm = this.root.querySelector<HTMLFormElement>('[data-chat-form]')!;
     this.chatInput = this.root.querySelector<HTMLInputElement>('[data-chat-input]')!;
-    this.errorBanner = this.root.querySelector<HTMLElement>('[data-error-banner]')!;
-
-    if (!stage) {
-      throw new Error('Missing game stage container');
-    }
+    this.chatButton = this.root.querySelector<HTMLButtonElement>('[data-chat-button]')!;
+    this.errorToast = this.root.querySelector<HTMLElement>('[data-error-toast]')!;
 
     this.gameInstance = new Phaser.Game({
       type: Phaser.AUTO,
-      parent: stage,
-      width: 720,
-      height: 720,
-      backgroundColor: '#0d1728',
+      parent: gameContainer,
+      width: 400,
+      height: 600,
+      backgroundColor: '#0b1020',
       scale: {
-        mode: Phaser.Scale.FIT,
-        autoCenter: Phaser.Scale.CENTER_BOTH,
+        mode: Phaser.Scale.RESIZE,
       },
       scene: [this.worldScene],
     });
@@ -84,8 +77,8 @@ export class App {
       this.gameInstance.destroy(true);
     });
 
-    this.chatForm.addEventListener('submit', (event) => {
-      event.preventDefault();
+    this.chatForm.addEventListener('submit', (e) => {
+      e.preventDefault();
       void this.sendChat();
     });
 
@@ -96,47 +89,25 @@ export class App {
   private template(): string {
     return `
       <div class="app-shell">
-        <header class="topbar panel">
-          <div>
-            <h1>WebMobile</h1>
-            <p>Anonymous users are placed automatically and can chat in place.</p>
+        <div class="game-container" data-game-container>
+          <div class="status-overlay">
+            <span class="status-dot" data-status-dot></span>
+            <span data-status-label>Connecting…</span>
           </div>
-          <div class="stack" style="justify-items:end;">
-            <div class="status-pill">
-              <span class="status-dot" data-status-dot></span>
-              <span data-status-value>Connecting…</span>
-            </div>
-            <div class="muted">Identity: <span data-identity-value>—</span></div>
-          </div>
-        </header>
-
-        <div class="content-grid">
-          <section class="panel game-panel">
-            <div class="game-stage" data-game-stage></div>
-          </section>
-
-          <aside class="sidebar">
-            <section class="panel section">
-              <h2>Presence</h2>
-              <div class="stack" data-presence-panel></div>
-            </section>
-
-            <section class="panel section">
-              <h2>Visible users</h2>
-              <div class="stack" data-players-panel></div>
-            </section>
-
-            <section class="panel section">
-              <h2>Chat</h2>
-              <div class="chat-log" data-chat-log></div>
-              <form class="chat-form" data-chat-form>
-                <input data-chat-input type="text" maxlength="1024" placeholder="Say something…" />
-                <button type="submit">Send</button>
-              </form>
-              <div class="error-banner" data-error-banner hidden></div>
-            </section>
-          </aside>
+          <div class="error-toast" data-error-toast hidden></div>
         </div>
+        <form class="chat-bar" data-chat-form>
+          <input
+            data-chat-input
+            type="text"
+            maxlength="1024"
+            placeholder="Say something…"
+            enterkeyhint="send"
+            autocomplete="off"
+            autocapitalize="sentences"
+          />
+          <button type="submit" data-chat-button disabled>Send</button>
+        </form>
       </div>
     `;
   }
@@ -191,7 +162,28 @@ export class App {
     conn.db.vw_nearby_positions_v1.onInsert(() => refresh());
     conn.db.vw_nearby_positions_v1.onDelete(() => refresh());
     conn.db.vw_nearby_positions_v1.onUpdate(() => refresh());
-    conn.db.chat_bubble_v1.onInsert(() => refresh());
+
+    // Event table: rows are inserted then auto-deleted.
+    // Accumulate locally so bubbles survive the server-side deletion.
+    conn.db.chat_bubble_v1.onInsert((_ctx, bubble) => {
+      this.addBubble(bubble);
+    });
+  }
+
+  private addBubble(bubble: ChatBubbleV1): void {
+    const key = this.identityKey(bubble.userId);
+
+    // Clear previous timer for this user if any
+    const existing = this.liveBubbles.get(key);
+    if (existing) clearTimeout(existing.timer);
+
+    const timer = setTimeout(() => {
+      this.liveBubbles.delete(key);
+      this.render();
+    }, BUBBLE_TTL_MS);
+
+    this.liveBubbles.set(key, { bubble, timer });
+    this.render();
   }
 
   private syncFromConnection(): void {
@@ -200,14 +192,10 @@ export class App {
     const me = [...this.connection.db.vw_user_me_v1.iter()][0] ?? null;
     const currentPosition = [...this.connection.db.vw_world_my_position_v1.iter()][0] ?? null;
     const nearbyPositions = [...this.connection.db.vw_nearby_positions_v1.iter()];
-    const chatBubbles = [...this.connection.db.chat_bubble_v1.iter()].slice(-20);
 
-    this.setState({
-      me,
-      currentPosition,
-      nearbyPositions,
-      chatBubbles,
-    });
+    // Chat bubbles are NOT read from .iter() — they're accumulated via onInsert
+    // because chat_bubble_v1 is an event table whose rows auto-delete.
+    this.setState({ me, currentPosition, nearbyPositions });
   }
 
   private setState(patch: Partial<AppState>): void {
@@ -216,101 +204,21 @@ export class App {
   }
 
   private render(): void {
-    this.statusValue.textContent = this.readableStatus(this.state.status);
-    this.statusDot.className = `status-dot ${this.state.status === 'connected' ? 'connected' : ''} ${this.state.status === 'error' ? 'error' : ''}`;
-    this.identityValue.textContent = this.state.identity ?? '—';
-    this.errorBanner.hidden = !this.state.error;
-    this.errorBanner.textContent = this.state.error ?? '';
+    this.statusLabel.textContent = this.readableStatus(this.state.status);
+    this.statusDot.className = `status-dot ${this.state.status}`;
+
+    this.errorToast.hidden = !this.state.error;
+    this.errorToast.textContent = this.state.error ?? '';
 
     const canChat = this.state.status === 'connected' && this.state.currentPosition !== null;
     this.chatInput.disabled = !canChat;
-    this.chatForm.querySelector('button')!.toggleAttribute('disabled', !canChat);
+    this.chatButton.disabled = !canChat;
 
-    this.renderPresencePanel();
-    this.renderPlayersPanel();
-    this.renderChatLog();
-    this.renderWorld();
-  }
-
-  private renderPresencePanel(): void {
-    const me = this.state.me;
-    const position = this.state.currentPosition;
-
-    if (!me || !position) {
-      this.presencePanel.innerHTML = '<p class="muted">Waiting for the server to place you on the grid.</p>';
-      return;
-    }
-
-    this.presencePanel.innerHTML = `
-      <article class="presence-card">
-        <header>
-          <div>
-            <strong>You</strong>
-            <div class="muted">Anonymous user ${this.escapeHtml(this.shortIdentity(me.userId))}</div>
-          </div>
-          <span class="muted">(${position.x}, ${position.y})</span>
-        </header>
-      </article>
-      <p class="muted">Your position is chosen by the server and stays fixed while connected.</p>
-    `;
-  }
-
-  private renderPlayersPanel(): void {
-    const players = this.buildRenderPlayers();
-    if (players.length === 0) {
-      this.playersPanel.innerHTML = '<p class="muted">No visible users yet.</p>';
-      return;
-    }
-
-    this.playersPanel.innerHTML = players
-      .map((player) => `
-        <article class="player-card">
-          <header>
-            <strong>${this.escapeHtml(player.name)}</strong>
-            <span class="muted">(${player.x}, ${player.y})</span>
-          </header>
-          ${player.chat ? `<p>${this.escapeHtml(player.chat)}</p>` : ''}
-        </article>
-      `)
-      .join('');
-  }
-
-  private renderChatLog(): void {
-    if (this.state.chatBubbles.length === 0) {
-      this.chatLog.innerHTML = '<p class="muted">Chat messages will appear here.</p>';
-      return;
-    }
-
-    const myUserId = this.state.me?.userId ?? null;
-
-    this.chatLog.innerHTML = this.state.chatBubbles
-      .map((bubble) => {
-        const isSelf = myUserId ? this.sameIdentity(bubble.userId, myUserId) : false;
-        return `
-          <article class="message-card">
-            <header>
-              <strong>${this.escapeHtml(this.userLabel(bubble.userId, isSelf))}</strong>
-              <span class="muted">(${bubble.x}, ${bubble.y})</span>
-            </header>
-            <p>${this.escapeHtml(bubble.content)}</p>
-          </article>
-        `;
-      })
-      .join('');
-    this.chatLog.scrollTop = this.chatLog.scrollHeight;
-  }
-
-  private renderWorld(): void {
     this.worldScene.renderPlayers(this.buildRenderPlayers());
   }
 
   private buildRenderPlayers(): RenderPlayer[] {
     const myUserId = this.state.me?.userId ?? null;
-    const bubbleById = new Map<string, ChatBubbleV1>();
-
-    for (const bubble of this.state.chatBubbles) {
-      bubbleById.set(this.identityKey(bubble.userId), bubble);
-    }
 
     const positionsById = new Map<string, UserPositionV1>();
     for (const position of this.state.nearbyPositions) {
@@ -324,16 +232,17 @@ export class App {
       .map((position) => {
         const isSelf = myUserId ? this.sameIdentity(position.userId, myUserId) : false;
         const id = this.identityKey(position.userId);
+        const liveBubble = this.liveBubbles.get(id);
         return {
           id,
           name: this.userLabel(position.userId, isSelf),
           x: position.x,
           y: position.y,
           isSelf,
-          chat: bubbleById.get(id)?.content,
+          chat: liveBubble?.bubble.content,
         } satisfies RenderPlayer;
       })
-      .sort((left, right) => left.y - right.y || left.x - right.x || left.name.localeCompare(right.name));
+      .sort((a, b) => a.y - b.y || a.x - b.x || a.name.localeCompare(b.name));
   }
 
   private async sendChat(): Promise<void> {
@@ -342,19 +251,16 @@ export class App {
     if (!content) return;
     await this.connection.reducers.sayV1({ content });
     this.chatInput.value = '';
+    this.chatInput.blur();
     this.setState({ error: null });
   }
 
   private readableStatus(status: ConnectionStatus): string {
     switch (status) {
-      case 'connecting':
-        return 'Connecting';
-      case 'connected':
-        return 'Connected';
-      case 'disconnected':
-        return 'Disconnected';
-      case 'error':
-        return 'Connection error';
+      case 'connecting': return 'Connecting…';
+      case 'connected': return 'Connected';
+      case 'disconnected': return 'Disconnected';
+      case 'error': return 'Error';
     }
   }
 
@@ -363,8 +269,7 @@ export class App {
   }
 
   private shortIdentity(identity: Identity): string {
-    const hex = this.identityKey(identity);
-    return hex.slice(0, 8);
+    return this.identityKey(identity).slice(0, 8);
   }
 
   private sameIdentity(left: Identity, right: Identity): boolean {
@@ -377,14 +282,5 @@ export class App {
 
   private formatIdentity(identity: Identity): string {
     return this.identityKey(identity);
-  }
-
-  private escapeHtml(value: string): string {
-    return value
-      .replace(/&/g, '&amp;')
-      .replace(/</g, '&lt;')
-      .replace(/>/g, '&gt;')
-      .replace(/"/g, '&quot;')
-      .replace(/'/g, '&#39;');
   }
 }
