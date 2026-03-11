@@ -1,0 +1,49 @@
+version: '3'
+
+includes:
+  server:
+    taskfile: server/Taskfile.yml
+    dir: server
+  client:
+    taskfile: client/Taskfile.yml
+    dir: client
+
+tasks:
+  # ── Orchestration ──────────────────────────────────────────────────
+
+  check:
+    desc: Check all projects
+    cmds:
+      - task server:check
+      - task client:lint
+
+  test:
+    desc: Run all tests
+    deps: [check]
+    cmds:
+      - task server:test
+
+  build:
+    desc: Build all projects
+    cmds:
+      - task server:build
+      - task client:build
+
+  # ── Deploy ─────────────────────────────────────────────────────────
+
+  login:
+    desc: Login to Spacetime using .env token
+    cmds:
+      - bash tools/spacetime_login.sh
+
+  publish:
+    desc: Publish webmobiledb to maincloud
+    deps: [login, server:build]
+    cmds:
+      - spacetime publish -p server/bins/webmobiledb -s maincloud -y webmobiledb
+
+  unsafe-overwrite:
+    desc: Publish webmobiledb to maincloud and delete data
+    deps: [login, server:build]
+    cmds:
+      - spacetime publish -p server/bins/webmobiledb -s maincloud -y webmobiledb --delete-data

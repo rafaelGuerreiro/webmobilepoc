@@ -1,0 +1,10 @@
+[package]
+name = "webmobiledb-core"
+version = { workspace = true }
+edition = { workspace = true }
+publish = { workspace = true }
+
+[dependencies]
+log = { workspace = true, features = ["max_level_info", "release_max_level_info"] }
+spacetimedb = { workspace = true, features = ["unstable"] }
+thiserror = { workspace = true }

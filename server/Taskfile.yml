@@ -1,0 +1,37 @@
+version: '3'
+
+tasks:
+  sdk-ts:
+    desc: Generate TypeScript bindings from server module
+    cmds:
+      - spacetime generate --lang typescript --out-dir client_module_bindings --module-path bins/webmobiledb
+      - rm -rf ../client/src/module_bindings
+      - mkdir -p ../client/src/module_bindings
+      - mv client_module_bindings/* ../client/src/module_bindings/
+      - rm -rf client_module_bindings
+
+  fmt:
+    desc: Format all workspace code
+    cmds:
+      - cargo fmt --all
+
+  check:
+    desc: Check all workspace targets
+    deps: [fmt]
+    cmds:
+      - cargo clippy --workspace --all-targets
+      - cargo check --workspace --all-targets
+
+  test:
+    desc: Run all workspace tests
+    deps: [check]
+    cmds:
+      - cargo test --workspace
+
+  build:
+    desc: Build server wasm targets
+    cmds:
+      - task sdk-ts
+      - task check
+      - cargo build -p webmobiledb --target wasm32-unknown-unknown
+      - cargo build --workspace --exclude webmobiledb
