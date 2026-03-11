@@ -30,6 +30,14 @@ tasks:
     cmds:
       - npm run cap:sync
 
+  cap-add-ios:
+    desc: Add the iOS Capacitor project if missing
+    deps: [install]
+    status:
+      - test -d ios/App
+    cmds:
+      - npx cap add ios
+
   cap-open-android:
     desc: Open the Android Capacitor project
     cmds:
@@ -38,4 +46,6 @@ tasks:
   cap-open-ios:
     desc: Open the iOS Capacitor project
     cmds:
+      - task: cap-add-ios
+      - task: cap-sync
       - npm run cap:open:ios
