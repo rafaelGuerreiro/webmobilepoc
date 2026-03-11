@@ -11,8 +11,8 @@ pub const DEFAULT_CHARACTER_CAPACITY: u32 = 15 * KG_TO_G;
 pub const DEFAULT_CHARACTER_SPEED: u16 = 120;
 pub const DEFAULT_CHARACTER_ATTACK_SPEED: u16 = 100;
 
-pub const DEFAULT_SPAWN_X: u16 = 1152;
-pub const DEFAULT_SPAWN_Y: u16 = 1152;
+pub const DEFAULT_SPAWN_X: u16 = 0;
+pub const DEFAULT_SPAWN_Y: u16 = 0;
 
 pub const MAP_VIEW_RADIUS: u16 = 32;
 

@@ -45,9 +45,7 @@ impl Deref for EventServices<'_> {
 impl EventServices<'_> {
     fn handle_sync_event(&self, event: EventV1, _rethrow: bool) -> ServiceResult<()> {
         match event {
-            EventV1::SystemInit => {
-                self.world_services().seed_initial_map();
-            },
+            EventV1::SystemInit => {},
             EventV1::UserCreated { .. } => {},
             EventV1::UserSignedIn { user_id } => {
                 self.user_services().signed_in(user_id);

@@ -12,7 +12,6 @@ use crate::{
             types::{ClassV1, GenderV1, RaceV1},
         },
         event::services::EventReducerContext,
-        item::services::ItemReducerContext,
     },
 };
 use spacetimedb::{Identity, ReducerContext, Table};
@@ -121,8 +120,6 @@ impl CharacterServices<'_> {
             .character_stats_v1()
             .try_insert(CharacterStatsV1::new(&character))
             .map_conflict()?;
-
-        self.ctx.item_services().create_starting_inventory(character.character_id)?;
 
         self.publish().character_created(user_id, character.character_id)?;
         self.select_character(user_id, character.character_id)?;
