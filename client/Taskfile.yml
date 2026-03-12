@@ -44,8 +44,9 @@ tasks:
       - npm run cap:open:android
 
   cap-open-ios:
-    desc: Open the iOS Capacitor project
+    desc: Prepare and open the fixed iOS Capacitor shell
     cmds:
       - task: cap-add-ios
+      - node ./scripts/configure-ios-dev-server.mjs
       - task: cap-sync
       - npm run cap:open:ios

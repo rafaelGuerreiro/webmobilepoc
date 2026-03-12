@@ -5,6 +5,9 @@ const config: CapacitorConfig = {
   appName: 'WebMobile',
   webDir: 'dist',
   bundledWebRuntime: false,
+  ios: {
+    loggingBehavior: 'none',
+  },
   plugins: {
     Keyboard: {
       resize: 'none',

@@ -32,7 +32,7 @@ tasks:
       - task client:cap-open-android
 
   ios:
-    desc: Open the iOS project
+    desc: Prepare and open the fixed iOS shell
     cmds:
       - task client:cap-open-ios
 
