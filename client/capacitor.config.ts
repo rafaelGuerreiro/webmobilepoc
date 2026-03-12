@@ -5,6 +5,11 @@ const config: CapacitorConfig = {
   appName: 'WebMobile',
   webDir: 'dist',
   bundledWebRuntime: false,
+  plugins: {
+    Keyboard: {
+      resize: 'none',
+    },
+  },
 };
 
 export default config;

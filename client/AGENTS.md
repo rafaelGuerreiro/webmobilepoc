@@ -5,9 +5,10 @@ Guidance for agents working inside `client/`, which is a Vite + TypeScript app u
 ## Project map
 
 - `src/main.ts` mounts the app and creates the top-level `App`.
-- `src/app/App.ts` owns the DOM shell, connection lifecycle, chat UI, and Phaser game bootstrap.
+- `src/app/App.ts` owns application orchestration, connection lifecycle, chat actions, and Phaser bootstrap.
+- `src/app/AppView.tsx` owns the lightweight Preact DOM shell around the Phaser canvas.
 - `src/game/WorldScene.ts` owns the world rendering and Phaser scene logic.
-- `src/native/` contains thin native wrappers. Follow the `haptics.ts` pattern for new native integrations.
+- `src/native/` contains thin native wrappers. Follow the `haptics.ts` / `keyboard.ts` pattern for new native integrations.
 - `src/style.css` defines the full-screen layout, safe-area handling, and DOM overlays.
 - `capacitor.config.ts` points Capacitor at `dist/`.
 - `vite.config.ts` defines local dev/preview server settings.
@@ -31,6 +32,7 @@ Guidance for agents working inside `client/`, which is a Vite + TypeScript app u
 - The game canvas uses `touch-action: manipulation`, which is a good mobile default.
 - Native haptics are wrapped in `src/native/haptics.ts` behind platform checks instead of being called directly from game code.
 - The SpacetimeDB connection token is persisted per host/database pair, which matches the docs' recommended token reuse pattern.
+- iOS keyboard behavior is handled with Capacitor Keyboard resize mode `none` plus a native wrapper in `src/native/keyboard.ts`, while the shell uses CSS safe-area variables for the Phaser mount and overlays.
 
 ## SpacetimeDB client guidance for this repo
 
@@ -148,7 +150,7 @@ Desktop keyboard support can be additive, but mobile input should drive the core
 
 This client already splits those concerns well.
 
-- Keep app chrome, connection status, chat controls, and safe-area-heavy UI in DOM/CSS unless there is a strong in-canvas reason.
+- Keep app chrome, connection status, chat controls, and safe-area-heavy UI in Preact + CSS unless there is a strong in-canvas reason.
 - Keep world rendering, animation, and object motion in Phaser.
 - If DOM and Phaser must coordinate, define a clear bridge at the app layer instead of reading DOM state inside the scene render loop.
 - If in-canvas UI grows significantly, consider a dedicated UI scene above the world scene rather than overloading a single scene.
@@ -189,7 +191,7 @@ Phaser inside a mobile webview is capable, but it is less forgiving than desktop
 ## Repo-specific editing advice
 
 - Prefer small helpers and named constants over broad class hierarchies in Phaser code.
-- Keep `App.ts` focused on orchestration and UI shell concerns; do not move world rendering logic there.
+- Keep `App.ts` focused on orchestration and state flow; put DOM markup in Preact components instead of HTML strings.
 - Keep SpacetimeDB orchestration in `App.ts`: connection setup, token reuse, subscriptions, reducer calls, and cache-to-UI mapping belong there more than in Phaser scenes.
 - Keep scene code deterministic and easy to redraw on resize.
 - Keep persistent data flows driven by subscribed tables/views, and keep transient UX flows driven by explicit local state when the source table is event-like.

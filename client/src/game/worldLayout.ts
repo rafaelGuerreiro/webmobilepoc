@@ -2,6 +2,7 @@ import type { RenderPlayer, WorldLayout } from './worldTypes';
 
 const MIN_COLS = 4;
 const MIN_ROWS = 4;
+const EDGE_PADDING_TILES = 0.5;
 
 export function createWorldLayout(players: RenderPlayer[], width: number, height: number): WorldLayout {
   let cols = MIN_COLS;
@@ -21,6 +22,6 @@ export function createWorldLayout(players: RenderPlayer[], width: number, height
     rows,
     tileSize,
     originX: (width - cols * tileSize) / 2,
-    originY: (height - rows * tileSize) / 2,
+    originY: tileSize * EDGE_PADDING_TILES,
   };
 }
