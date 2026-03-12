@@ -27,7 +27,7 @@ tasks:
       - task client:cap-sync
 
   android:
-    desc: Open the Android project
+    desc: Prepare and open the Android shell
     cmds:
       - task client:cap-open-android
 

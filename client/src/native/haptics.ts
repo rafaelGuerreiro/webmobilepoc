@@ -7,12 +7,17 @@ type NativeHapticsPlugin = {
 
 const NativeHaptics = registerPlugin<NativeHapticsPlugin>('NativeHaptics');
 
-function isIosNative(): boolean {
-  return Capacitor.isNativePlatform() && Capacitor.getPlatform() === 'ios';
+function isNativeHapticsPlatform(): boolean {
+  if (!Capacitor.isNativePlatform()) {
+    return false;
+  }
+
+  const platform = Capacitor.getPlatform();
+  return platform === 'ios' || platform === 'android';
 }
 
 async function trigger(method: keyof NativeHapticsPlugin): Promise<void> {
-  if (!isIosNative()) {
+  if (!isNativeHapticsPlatform()) {
     return;
   }
 
